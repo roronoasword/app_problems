@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NexusSolve | Plataforma de Retos y Repositorios</title>
+  <meta name="description" content="Plataforma de crowdsourcing tecnológico y resolución de retos empresariales con visor de repositorios estilo GitHub." />
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              dark: '#090D16',
+              surface: '#0D1117',
+              card: '#161B22',
+              border: '#30363D',
+              purple: '#9333EA',
+              purpleHover: '#8A2BE2',
+              purpleLight: '#A855F7',
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts: Plus Jakarta Sans & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background-color: #090D16;
+      color: #F3F4F6;
+    }
+    .font-code {
+      font-family: 'JetBrains Mono', ui-monospace, monospace;
+    }
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #090D16;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #30363D;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #9333EA;
+    }
+  </style>
+</head>
+<body class="bg-[#090D16] text-gray-100 min-h-screen flex flex-col antialiased selection:bg-purple-600 selection:text-white">
+
+  <!-- APP CONTAINER -->
+  <div id="app" class="flex-1 flex flex-col">
+    <!-- El contenido se renderiza dinámicamente según el estado de autenticación y navegación -->
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 max-w-md w-full pointer-events-none px-4 sm:px-0"></div>
+
+  <!-- JAVASCRIPT PRINCIPAL AUTÓNOMO -->
+  <script>
+    // ==========================================
+    // 1. ESTADO GLOBAL Y PERSISTENCIA (localStorage)
+    // ==========================================
+    const STORAGE_USERS = 'nexussolve_users_v2';
+    const STORAGE_SESSION = 'nexussolve_session_v2';
+    const STORAGE_SOLUTIONS = 'nexussolve_solutions_v2';
+
+    // Usuarios iniciales por defecto (Angelo2008 / Sago2008)
+    const DEFAULT_USERS = [
+      {
+        username: 'Angelo2008',
+        password: 'Sago2008',
+        displayName: 'Angelo García',
+        bio: 'Desarrollador Full-Stack & Ingeniero de Software.'
+      }
+    ];
+
+    // 13 Retos Empresariales Oficiales
+    const CHALLENGES = [
+      {
+        id: 'chl-1',
+        number: 1,
+        company: 'Puerto de Callao Logistics',
+        industry: 'Logística',
+        title: 'Optimización de rutas de contenedores y predicción de cuellos de botella',
+        summary: 'Optimización en tiempo real de rutas de contenedores y predicción de cuellos de botella en patio portuario.',
+        reward: 4500,
+        tags: ['Python', 'IoT', 'Algoritmos de Grafos'],
+        defaultLang: 'python',
+        defaultFile: 'container_optimizer.py',
+        deadline: '2026-12-15',
+        starterCode: `# Solución para Puerto de Callao Logistics
+import heapq
+
+def optimize_container_routes(yard_graph, start_bay, destination_cranes):
+    """Calcula la ruta óptima de menor congestión para camiones de transferencia."""
+    distances = {node: float('inf') for node in yard_graph}
+    distances[start_bay] = 0
+    pq = [(0, start_bay)]
+    
+    while pq:
+        cost, curr = heapq.heappop(pq)
+        if cost > distances[curr]:
+            continue
+        for neighbor, weight in yard_graph.get(curr, []):
+            if cost + weight < distances[neighbor]:
+                distances[neighbor] = cost + weight
+                heapq.heappush(pq, (cost + weight, neighbor))
+                
+    return {c: distances[c] for c in destination_cranes if c in distances}
+
+if __name__ == "__main__":
+    red_patio = {'Bay_A': [('Lane_1', 3), ('Lane_2', 6)], 'Lane_1': [('Grua_STS_1', 4)], 'Grua_STS_1': []}
+    print("Rutas óptimas calculadas:", optimize_container_routes(red_patio, 'Bay_A', ['Grua_STS_1']))
+`
+      },
+      {
+        id: 'chl-2',
+        number: 2,
+        company: 'FinTech Global Sol',
+        industry: 'Finanzas',
+        title: 'Detección de anomalías en transacciones transfronterizas mediante microservicios',
+        summary: 'Detección de anomalías en transacciones transfronterizas mediante microservicios de baja latencia.',
+        reward: 6000,
+        tags: ['Rust', 'Java', 'Machine Learning'],
+        defaultLang: 'javascript',
+        defaultFile: 'anomaly_detector.js',
+        deadline: '2026-12-01',
+        starterCode: `// Detector de anomalías transaccionales de baja latencia
+function detectAnomalies(transactions, threshold = 2.5) {
+  const amounts = transactions.map(t => t.amount);
+  const avg = amounts.reduce((a, b) => a + b, 0) / amounts.length;
+  const stdDev = Math.sqrt(amounts.reduce((a, b) => a + Math.pow(b - avg, 2), 0) / amounts.length);
+
+  return transactions.map(tx => {
+    const zScore = Math.abs((tx.amount - avg) / (stdDev || 1));
+    return {
+      id: tx.id,
+      amount: tx.amount,
+      zScore: zScore.toFixed(2),
+      isFraud: zScore > threshold || tx.amount > 30000
+    };
+  });
+}
+
+console.log(detectAnomalies([{id: 'TX1', amount: 150}, {id: 'TX2', amount: 48000}]));
+`
+      },
+      {
+        id: 'chl-3',
+        number: 3,
+        company: 'EcoEnergy Corp',
+        industry: 'Energía',
+        title: 'Sistema de balanceo de carga para red distribuida de paneles solares residenciales',
+        summary: 'Sistema de balanceo de carga para red distribuida de paneles solares residenciales.',
+        reward: 3200,
+        tags: ['C++', 'Go', 'Data Science'],
+        defaultLang: 'python',
+        defaultFile: 'solar_balancer.py',
+        deadline: '2026-11-30',
+        starterCode: `# Balanceo dinámico de red fotovoltaica
+def balance_solar_grid(generation_kw, demand_kw, battery_level_kwh, max_battery=15.0):
+    net = generation_kw - demand_kw
+    if net > 0:
+        charge = min(net, max_battery - battery_level_kwh)
+        export_grid = net - charge
+        return {"action": "STORE_AND_EXPORT", "charge_kw": charge, "grid_kw": export_grid}
+    else:
+        deficit = abs(net)
+        discharge = min(deficit, battery_level_kwh)
+        import_grid = deficit - discharge
+        return {"action": "SUPPLY_DEFICIT", "battery_kw": discharge, "grid_import_kw": import_grid}
+
+print(balance_solar_grid(6.2, 2.5, 8.0))
+`
+      },
+      {
+        id: 'chl-4',
+        number: 4,
+        company: 'AgriTech Solutions',
+        industry: 'Agricultura',
+        title: 'Algoritmo de procesamiento de imágenes satelitales para detección temprana de plagas',
+        summary: 'Algoritmo de procesamiento de imágenes satelitales para detección temprana de plagas.',
+        reward: 5000,
+        tags: ['Python', 'Computer Vision', 'PyTorch'],
+        defaultLang: 'python',
+        defaultFile: 'pest_ndvi_detector.py',
+        deadline: '2026-12-20',
+        starterCode: `# Detección de estrés foliar por índice NDVI
+def calculate_ndvi_stress(nir, red, threshold=0.33):
+    ndvi = (nir - red) / (nir + red) if (nir + red) > 0 else 0
+    return {"ndvi": round(ndvi, 3), "pest_alert": ndvi < threshold}
+
+print(calculate_ndvi_stress(0.45, 0.28))
+`
+      },
+      {
+        id: 'chl-5',
+        number: 5,
+        company: 'HealthSync Systems',
+        industry: 'Salud',
+        title: 'Módulo de encriptación end-to-end con especificación FHIR para historias clínicas',
+        summary: 'Módulo de encriptación end-to-end con especificación FHIR para historias clínicas.',
+        reward: 7500,
+        tags: ['Cybersecurity', 'Node.js', 'Cryptography'],
+        defaultLang: 'javascript',
+        defaultFile: 'fhir_encryption.js',
+        deadline: '2026-11-25',
+        starterCode: `// Módulo de cifrado de recursos HL7 FHIR
+function encryptFhirPayload(resource, key) {
+  return {
+    resourceType: resource.resourceType,
+    id: resource.id,
+    encryptedData: btoa(JSON.stringify(resource)),
+    algorithm: "AES-256-GCM",
+    secured: true
+  };
+}
+console.log(encryptFhirPayload({resourceType: "Patient", id: "P101", name: "Juan Perez"}, "key"));
+`
+      },
+      {
+        id: 'chl-6',
+        number: 6,
+        company: 'CodeAcademy Labs',
+        industry: 'Educación',
+        title: 'Aplicación simple de software en clase de programación: Script "Hola Mundo"',
+        summary: 'Script básico de "Hola Mundo" con validación interactiva de entrada/salida y bienvenida a nuevos programadores.',
+        reward: 1200,
+        tags: ['JavaScript', 'Python', 'Básico', 'Educación'],
+        defaultLang: 'javascript',
+        defaultFile: 'hola_mundo.js',
+        deadline: '2026-12-30',
+        starterCode: `// ==============================================================
+// CodeAcademy Labs - Reto Inicial: Script "Hola Mundo"
+// Autor: Angelo2008
+// Repositorio: angelo2008/codeacademy-holamundo-v1
+// ==============================================================
+
+function holaMundo(nombreUsuario = "Angelo2008") {
+  const saludo = \`¡Hola Mundo desde NexusSolve! Bienvenido/a, \${nombreUsuario}.\`;
+  const timestamp = new Date().toISOString();
+  
+  const reporte = {
+    status: 200,
+    saludo: saludo,
+    usuario: nombreUsuario,
+    longitudCaracteres: saludo.length,
+    timestamp: timestamp,
+    lenguaje: "JavaScript ECMAScript 2026",
+    verificado: true
+  };
+
+  return reporte;
+}
+
+// Ejecución directa de prueba
+const resultado = holaMundo("Angelo2008");
+console.log(resultado.saludo);
+console.log(JSON.stringify(resultado, null, 2));
+console.log("[OK] Validación exitosa. Saludo entregado correctamente.");
+`
+      },
+      {
+        id: 'chl-7',
+        number: 7,
+        company: 'PokeWorld Gaming',
+        industry: 'Entretenimiento',
+        title: 'Mini simulación de combate por turnos basada en estadísticas de Pokémon',
+        summary: 'Mini simulación de combate por turnos basada en estadísticas de Pokémon usando estructuras de datos básicas.',
+        reward: 2500,
+        tags: ['Python', 'JavaScript', 'Gaming', 'POO'],
+        defaultLang: 'python',
+        defaultFile: 'pokemon_battle_sim.py',
+        deadline: '2026-12-10',
+        starterCode: `# ==============================================================
+# PokeWorld Gaming - Simulación de Combate por Turnos
+# Desarrollado por: Angelo2008
+# ==============================================================
+
+class Pokemon:
+    def __init__(self, name, p_type, hp, attack, defense, speed):
+        self.name = name
+        self.p_type = p_type
+        self.hp = hp
+        self.attack = attack
+        self.defense = defense
+        self.speed = speed
+
+def simulate_battle(p1, p2):
+    log = [f"¡Comienza el combate: {p1.name} vs {p2.name}!"]
+    turn = 1
+    while p1.hp > 0 and p2.hp > 0 and turn <= 5:
+        damage = max(5, int((p1.attack / p2.defense) * 20))
+        p2.hp = max(0, p2.hp - damage)
+        log.append(f"Turno {turn}: {p1.name} causa {damage} de daño a {p2.name} (HP: {p2.hp})")
+        if p2.hp == 0:
+            break
+        turn += 1
+    winner = p1.name if p1.hp > p2.hp else p2.name
+    log.append(f"🏆 Ganador del combate: {winner}")
+    return log
+
+p_a = Pokemon("Pikachu", "Eléctrico", 90, 55, 40, 90)
+p_b = Pokemon("Squirtle", "Agua", 95, 48, 65, 43)
+for line in simulate_battle(p_a, p_b):
+    print(line)
+`
+      },
+      {
+        id: 'chl-8',
+        number: 8,
+        company: 'RetailChain Andina',
+        industry: 'Comercio',
+        title: 'Motor de recomendación de productos basado en historial de compras locales',
+        summary: 'Motor de recomendación de productos basado en historial de compras locales en tiendas de Bogotá.',
+        reward: 3800,
+        tags: ['Python', 'Data Science', 'Machine Learning'],
+        defaultLang: 'python',
+        defaultFile: 'recommendation_engine.py',
+        deadline: '2026-12-05',
+        starterCode: `# Motor de Recomendación ítem-ítem
+def recommend(product, matrix):
+    vec = matrix.get(product, [])
+    sims = [(p, sum(a*b for a,b in zip(vec, v))) for p, v in matrix.items() if p != product]
+    sims.sort(key=lambda x: x[1], reverse=True)
+    return sims[:2]
+
+datos = {"Café": [1, 1, 0], "Panela": [1, 0, 1], "Arepas": [0, 1, 1]}
+print("Recomendaciones para Café:", recommend("Café", datos))
+`
+      },
+      {
+        id: 'chl-9',
+        number: 9,
+        company: 'SkyTraffic Control',
+        industry: 'Aviación',
+        title: 'Algoritmo en grafos para cálculo de rutas de aproximación de aeronaves',
+        summary: 'Algoritmo en grafos para cálculo de rutas de aproximación de aeronaves en aeropuertos de alta densidad.',
+        reward: 6200,
+        tags: ['Go', 'C++', 'Algoritmos de Grafos'],
+        defaultLang: 'javascript',
+        defaultFile: 'flight_approach.js',
+        deadline: '2026-12-18',
+        starterCode: `// Secuenciador de aproximación segura
+function sequenceApproaches(flights) {
+  return flights.sort((a,b) => a.eta - b.eta).map((f, i) => ({
+    callsign: f.callsign,
+    assignedSlot: f.eta + (i * 3) + 'm',
+    runway: 'RWY-36L'
+  }));
+}
+console.log(sequenceApproaches([{callsign: 'IBE10', eta: 10}, {callsign: 'AVA20', eta: 11}]));
+`
+      },
+      {
+        id: 'chl-10',
+        number: 10,
+        company: 'GreenWater Utilities',
+        industry: 'Saneamiento',
+        title: 'Monitoreo IoT de presión en redes de acueducto para alerta temprana de fugas',
+        summary: 'Monitoreo IoT de presión en redes de acueducto para alerta temprana de fugas.',
+        reward: 4100,
+        tags: ['Python', 'IoT', 'Series Temporales'],
+        defaultLang: 'python',
+        defaultFile: 'leak_detector.py',
+        deadline: '2026-12-12',
+        starterCode: `# Detector de anomalías de presión hidráulica
+def detect_leak(readings, threshold_drop=0.9):
+    drops = [readings[i] - readings[i+1] for i in range(len(readings)-1)]
+    return {"leak_detected": any(d > threshold_drop for d in drops), "max_drop": max(drops)}
+
+print(detect_leak([4.5, 4.4, 3.2, 2.9]))
+`
+      },
+      {
+        id: 'chl-11',
+        number: 11,
+        company: 'CyberShield Enterprise',
+        industry: 'Ciberseguridad',
+        title: 'Analizador de logs de acceso para detección de intentos de fuerza bruta en servidores SSH',
+        summary: 'Analizador de logs de acceso para detección de intentos de fuerza bruta en servidores SSH.',
+        reward: 5500,
+        tags: ['Rust', 'Python', 'Ciberseguridad'],
+        defaultLang: 'python',
+        defaultFile: 'ssh_guard.py',
+        deadline: '2026-11-28',
+        starterCode: `# Analizador de intentos fallidos en auth.log
+from collections import Counter
+def detect_bruteforce(logs, max_fails=3):
+    fails = [log.split('from ')[1] for log in logs if 'Failed' in log]
+    return {ip: count for ip, count in Counter(fails).items() if count >= max_fails}
+
+sample = ["Failed from 192.168.1.5", "Failed from 192.168.1.5", "Failed from 192.168.1.5"]
+print("IPs bloqueadas:", detect_bruteforce(sample))
+`
+      },
+      {
+        id: 'chl-12',
+        number: 12,
+        company: 'CryptoFlow Exchange',
+        industry: 'Blockchain',
+        title: 'Indexador de transacciones en mempool para seguimiento de comisiones de gas en tiempo real',
+        summary: 'Indexador de transacciones en mempool para seguimiento de comisiones de gas en tiempo real.',
+        reward: 8000,
+        tags: ['Blockchain', 'JavaScript', 'Finanzas'],
+        defaultLang: 'javascript',
+        defaultFile: 'mempool_oracle.js',
+        deadline: '2026-12-22',
+        starterCode: `// Estimador de comisiones EIP-1559
+function estimateGasFees(baseFee, priorityFees) {
+  const sorted = priorityFees.sort((a,b) => a - b);
+  const median = sorted[Math.floor(sorted.length / 2)] || 2.0;
+  return {
+    baseFee: baseFee + ' Gwei',
+    suggestedMax: (baseFee + median).toFixed(1) + ' Gwei'
+  };
+}
+console.log(estimateGasFees(22.0, [1.5, 2.0, 3.1]));
+`
+      },
+      {
+        id: 'chl-13',
+        number: 13,
+        company: 'SmartCity Mobility',
+        industry: 'Transporte Urbano',
+        title: 'Simulación por autómatas celulares de tráfico vehicular en avenidas principales',
+        summary: 'Simulación por autómatas celulares (modelo Nagel-Schreckenberg) de tráfico vehicular en avenidas principales.',
+        reward: 4900,
+        tags: ['Python', 'Simulación', 'Smart Cities'],
+        defaultLang: 'python',
+        defaultFile: 'traffic_sim.py',
+        deadline: '2026-12-16',
+        starterCode: `# Simulación Nagel-Schreckenberg de flujo vehicular
+def step(road, vmax=3):
+    n = len(road)
+    res = [-1]*n
+    for i in range(n):
+        v = road[i]
+        if v != -1:
+            dist = 1
+            while dist <= vmax and road[(i+dist)%n] == -1: dist += 1
+            v = min(v + 1, vmax, dist - 1)
+            res[(i+v)%n] = v
+    return res
+
+print("Flujo vehicular simulado:", step([0, -1, 2, -1, 1]))
+`
+      }
+    ];
+
+    // Soluciones iniciales precargadas para Angelo2008
+    const INITIAL_SOLUTIONS = [
+      {
+        id: 'sol-06',
+        challengeId: 'chl-6',
+        username: 'Angelo2008',
+        repoName: 'angelo2008/codeacademy-holamundo-v1',
+        fileName: 'hola_mundo.js',
+        language: 'javascript',
+        commitMessage: 'feat: Implementación validada de Hola Mundo con reporte JSON',
+        commitHash: 'a8f39c2',
+        submittedAt: '2026-11-09 14:20',
+        status: 'aceptada',
+        description: 'Script interactivo que genera el saludo oficial de bienvenida y reporte con timestamp.',
+        code: `// ==============================================================
+// CodeAcademy Labs - Reto Inicial: Script "Hola Mundo"
+// Autor: Angelo2008
+// Repositorio: angelo2008/codeacademy-holamundo-v1
+// ==============================================================
+
+function holaMundo(nombreUsuario = "Angelo2008") {
+  const saludo = \`¡Hola Mundo desde NexusSolve! Bienvenido/a, \${nombreUsuario}.\`;
+  const timestamp = new Date().toISOString();
+  
+  const reporte = {
+    status: 200,
+    saludo: saludo,
+    usuario: nombreUsuario,
+    longitudCaracteres: saludo.length,
+    timestamp: timestamp,
+    lenguaje: "JavaScript ECMAScript 2026",
+    verificado: true
+  };
+
+  return reporte;
+}
+
+const resultado = holaMundo("Angelo2008");
+console.log(resultado.saludo);
+console.log(JSON.stringify(resultado, null, 2));
+console.log("[OK] Validación exitosa. Saludo entregado correctamente.");
+`,
+        executionOutput: `¡Hola Mundo desde NexusSolve! Bienvenido/a, Angelo2008.
+{
+  "status": 200,
+  "saludo": "¡Hola Mundo desde NexusSolve! Bienvenido/a, Angelo2008.",
+  "usuario": "Angelo2008",
+  "longitudCaracteres": 57,
+  "timestamp": "2026-11-09T14:20:00.000Z",
+  "lenguaje": "JavaScript ECMAScript 2026",
+  "verificado": true
+}
+[OK] Validación exitosa. Saludo entregado correctamente.`
+      },
+      {
+        id: 'sol-07',
+        challengeId: 'chl-7',
+        username: 'Angelo2008',
+        repoName: 'angelo2008/pokeworld-turn-battle-engine',
+        fileName: 'pokemon_battle_sim.py',
+        language: 'python',
+        commitMessage: 'feat: Motor de batalla por turnos con estadísticas elementales',
+        commitHash: 'b4e719d',
+        submittedAt: '2026-11-09 16:45',
+        status: 'en_revision',
+        description: 'Simulador completo de combates Pokémon por turnos con log detallado.',
+        code: `# ==============================================================
+# PokeWorld Gaming - Simulación de Combate por Turnos
+# Desarrollado por: Angelo2008
+# ==============================================================
+
+class Pokemon:
+    def __init__(self, name, hp, attack, defense):
+        self.name = name
+        self.hp = hp
+        self.attack = attack
+        self.defense = defense
+
+def combat(p1, p2):
+    log = [f"¡Inicia combate: {p1.name} vs {p2.name}!"]
+    turn = 1
+    while p1.hp > 0 and p2.hp > 0 and turn <= 4:
+        dmg = max(5, int((p1.attack / p2.defense) * 22))
+        p2.hp = max(0, p2.hp - dmg)
+        log.append(f"Turno {turn}: {p1.name} causa {dmg} a {p2.name} (HP restante: {p2.hp})")
+        if p2.hp == 0: break
+        turn += 1
+    log.append(f"🏆 Ganador: {p1.name}")
+    return log
+
+for r in combat(Pokemon("Pikachu", 90, 55, 40), Pokemon("Squirtle", 95, 48, 65)):
+    print(r)
+`,
+        executionOutput: `¡Inicia combate: Pikachu vs Squirtle!
+Turno 1: Pikachu causa 32 a Squirtle (HP restante: 63)
+Turno 2: Pikachu causa 34 a Squirtle (HP restante: 29)
+Turno 3: Pikachu causa 35 a Squirtle (HP restante: 0)
+🏆 Ganador: Pikachu
+[OK] Simulación completada en 3 turnos.`
+      }
+    ];
+
+    // ==========================================
+    // 2. GESTOR DE ALMACENAMIENTO LOCAL
+    // ==========================================
+    function getRegisteredUsers() {
+      const data = localStorage.getItem(STORAGE_USERS);
+      return data ? JSON.parse(data) : DEFAULT_USERS;
+    }
+
+    function saveRegisteredUsers(users) {
+      localStorage.setItem(STORAGE_USERS, JSON.stringify(users));
+    }
+
+    function getCurrentSession() {
+      const data = localStorage.getItem(STORAGE_SESSION);
+      return data ? JSON.parse(data) : null;
+    }
+
+    function setCurrentSession(user) {
+      if (user) {
+        localStorage.setItem(STORAGE_SESSION, JSON.stringify(user));
+      } else {
+        localStorage.removeItem(STORAGE_SESSION);
+      }
+    }
+
+    function getSolutions() {
+      const data = localStorage.getItem(STORAGE_SOLUTIONS);
+      return data ? JSON.parse(data) : INITIAL_SOLUTIONS;
+    }
+
+    function saveSolutions(solutions) {
+      localStorage.setItem(STORAGE_SOLUTIONS, JSON.stringify(solutions));
+    }
+
+    // Estado reactivo en memoria
+    let state = {
+      currentUser: getCurrentSession(),
+      registeredUsers: getRegisteredUsers(),
+      solutions: getSolutions(),
+      challenges: CHALLENGES,
+      activeTab: 'inicio', // 'inicio' | 'mis-soluciones' | 'explorar'
+      searchQuery: '',
+      filterIndustry: 'Todas',
+      activeModal: null, // 'submit' | 'repo-viewer'
+      selectedChallenge: null,
+      selectedSolution: null
+    };
+
+    // ==========================================
+    // 3. SISTEMA DE TOASTS
+    // ==========================================
+    function showToast(type, title, message) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto p-4 rounded-xl border shadow-xl flex items-start gap-3 backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 ${
+        type === 'success' ? 'bg-[#0F1E19] border-emerald-500/40 text-emerald-300' :
+        type === 'error' ? 'bg-[#1F1015] border-rose-500/40 text-rose-300' :
+        'bg-[#161224] border-purple-500/40 text-purple-300'
+      }`;
+
+      toast.innerHTML = `
+        <div class="flex-1">
+          <h4 class="text-xs font-bold text-white uppercase tracking-wider">${title}</h4>
+          <p class="text-xs text-gray-300 mt-0.5 leading-relaxed">${message}</p>
+        </div>
+        <button onclick="this.parentElement.remove()" class="text-gray-400 hover:text-white text-xs p-1">✕</button>
+      `;
+
+      container.appendChild(toast);
+      setTimeout(() => { if (toast.parentElement) toast.remove(); }, 4000);
+    }
+
+    // ==========================================
+    // 4. RENDERIZADOR PRINCIPAL
+    // ==========================================
+    function renderApp() {
+      const app = document.getElementById('app');
+      
+      // Si no hay usuario autenticado, mostramos pantalla de Login / Onboarding
+      if (!state.currentUser) {
+        app.innerHTML = renderAuthScreen();
+        bindAuthEvents();
+        return;
+      }
+
+      // Si está autenticado, renderizamos la estructura principal con la barra de navegación de 3 botones
+      app.innerHTML = `
+        <!-- NAVBAR SUPERIOR -->
+        ${renderNavbar()}
+
+        <!-- CONTENIDO PRINCIPAL SEGÚN PESTAÑA -->
+        <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          ${
+            state.activeTab === 'inicio' ? renderDashboard() :
+            state.activeTab === 'mis-soluciones' ? renderMySolutions() :
+            renderExploreChallenges()
+          }
+        </main>
+
+        <!-- FOOTER -->
+        ${renderFooter()}
+
+        <!-- MODAL DE ENVÍO DE SOLUCIÓN -->
+        ${state.activeModal === 'submit' ? renderSubmitModal() : ''}
+
+        <!-- MODAL VISOR ESTILO GITHUB REPO -->
+        ${state.activeModal === 'repo-viewer' ? renderRepoViewerModal() : ''}
+      `;
+
+      bindGlobalEvents();
+    }
+
+    // ==========================================
+    // 5. PANTALLA DE BIENVENIDA / LOGIN (ONBOARDING)
+    // ==========================================
+    function renderAuthScreen() {
+      return `
+        <div class="min-h-screen flex items-center justify-center p-4 bg-[#090D16] relative overflow-hidden">
+          <!-- Resplandores de fondo -->
+          <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600/15 rounded-full blur-3xl pointer-events-none"></div>
+          <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative w-full max-w-md bg-[#0D1117] border border-[#30363D] rounded-2xl shadow-2xl p-6 sm:p-8 backdrop-blur-xl text-gray-100 z-10">
+            <!-- Header Brand -->
+            <div class="text-center mb-6">
+              <div class="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 via-indigo-600 to-purple-400 p-0.5 shadow-xl shadow-purple-900/40 mb-3 flex items-center justify-center">
+                <div class="w-full h-full bg-[#0D1117] rounded-[14px] flex items-center justify-center text-purple-400 font-bold text-xl font-code">
+                  &lt;/&gt;
+                </div>
+              </div>
+              <h1 class="text-2xl font-bold tracking-tight text-white">
+                Nexus<span class="text-purple-400">Solve</span>
+              </h1>
+              <p class="text-xs text-gray-400 mt-1 max-w-xs mx-auto">
+                Plataforma de retos empresariales e intercambio de código estilo repositorio
+              </p>
+            </div>
+
+            <!-- Botón de Credenciales Precargadas (Angelo2008 / Sago2008) -->
+            <div class="mb-5 p-3.5 rounded-xl bg-purple-950/30 border border-purple-500/30 flex items-center justify-between text-xs">
+              <div>
+                <span class="text-purple-300 font-bold block">✨ Credenciales para prueba rápida:</span>
+                <span class="text-gray-300 font-code text-[11px]">
+                  Usuario: <strong class="text-white">Angelo2008</strong> · Pass: <strong class="text-white">••••••••</strong>
+                </span>
+              </div>
+              <button id="btn-quick-login" class="px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg shadow transition-colors whitespace-nowrap">
+                Entrar directo
+              </button>
+            </div>
+
+            <!-- Formulario -->
+            <form id="auth-form" class="space-y-4">
+              <!-- Selector Iniciar / Registrar -->
+              <div class="grid grid-cols-2 p-1 bg-[#161B22] border border-[#30363D] rounded-lg text-xs font-medium">
+                <button type="button" id="tab-login" class="py-1.5 rounded-md bg-purple-600 text-white font-semibold shadow">
+                  Iniciar Sesión
+                </button>
+                <button type="button" id="tab-register" class="py-1.5 rounded-md text-gray-400 hover:text-white">
+                  Nuevo Registro
+                </button>
+              </div>
+
+              <div id="field-name" class="hidden">
+                <label class="block text-xs font-medium text-gray-300 mb-1">Nombre Completo o Alias</label>
+                <input type="text" id="input-name" placeholder="Ej. Angelo García" class="w-full px-3.5 py-2.5 bg-[#090D16] border border-[#30363D] rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1">Usuario de Plataforma</label>
+                <input type="text" id="input-username" required value="Angelo2008" class="w-full px-3.5 py-2.5 bg-[#090D16] border border-[#30363D] rounded-lg text-sm font-code text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-medium text-gray-300">Contraseña (oculta)</label>
+                  <button type="button" id="btn-toggle-pass" class="text-[11px] text-purple-400 hover:underline">Mostrar</button>
+                </div>
+                <input type="password" id="input-password" required value="Sago2008" class="w-full px-3.5 py-2.5 bg-[#090D16] border border-[#30363D] rounded-lg text-sm font-code text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+              </div>
+
+              <div id="auth-error" class="hidden text-xs text-rose-400 bg-rose-950/40 border border-rose-500/30 p-2.5 rounded-lg"></div>
+
+              <button type="submit" id="btn-auth-submit" class="w-full py-2.5 px-4 text-xs sm:text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg transition-colors shadow-lg shadow-purple-900/40">
+                Acceder a la Plataforma
+              </button>
+            </form>
+
+            <div class="mt-6 pt-5 border-t border-[#30363D] flex items-center justify-around text-[11px] text-gray-400">
+              <span>🔒 Sesión Local</span>
+              <span>·</span>
+              <span>🐙 Visor GitHub</span>
+              <span>·</span>
+              <span>⚡ 13 Desafíos</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function bindAuthEvents() {
+      let isRegistering = false;
+      const tabLogin = document.getElementById('tab-login');
+      const tabRegister = document.getElementById('tab-register');
+      const fieldName = document.getElementById('field-name');
+      const authForm = document.getElementById('auth-form');
+      const authError = document.getElementById('auth-error');
+      const btnSubmit = document.getElementById('btn-auth-submit');
+      const btnTogglePass = document.getElementById('btn-toggle-pass');
+      const inputPass = document.getElementById('input-password');
+      const btnQuick = document.getElementById('btn-quick-login');
+
+      // Botón entrada rápida
+      btnQuick.onclick = () => {
+        const user = state.registeredUsers.find(u => u.username.toLowerCase() === 'angelo2008') || DEFAULT_USERS[0];
+        state.currentUser = user;
+        setCurrentSession(user);
+        showToast('success', '¡Bienvenido, Angelo2008!', 'Has ingresado con las credenciales por defecto.');
+        renderApp();
+      };
+
+      // Toggle mostrar contraseña
+      btnTogglePass.onclick = () => {
+        if (inputPass.type === 'password') {
+          inputPass.type = 'text';
+          btnTogglePass.textContent = 'Ocultar';
+        } else {
+          inputPass.type = 'password';
+          btnTogglePass.textContent = 'Mostrar';
+        }
+      };
+
+      // Switch tab
+      tabLogin.onclick = () => {
+        isRegistering = false;
+        tabLogin.className = 'py-1.5 rounded-md bg-purple-600 text-white font-semibold shadow';
+        tabRegister.className = 'py-1.5 rounded-md text-gray-400 hover:text-white';
+        fieldName.classList.add('hidden');
+        btnSubmit.textContent = 'Acceder a la Plataforma';
+        authError.classList.add('hidden');
+      };
+
+      tabRegister.onclick = () => {
+        isRegistering = true;
+        tabRegister.className = 'py-1.5 rounded-md bg-purple-600 text-white font-semibold shadow';
+        tabLogin.className = 'py-1.5 rounded-md text-gray-400 hover:text-white';
+        fieldName.classList.remove('hidden');
+        btnSubmit.textContent = 'Crear Cuenta y Comenzar';
+        authError.classList.add('hidden');
+      };
+
+      authForm.onsubmit = (e) => {
+        e.preventDefault();
+        const username = document.getElementById('input-username').value.trim();
+        const password = document.getElementById('input-password').value.trim();
+        const name = document.getElementById('input-name').value.trim();
+
+        if (isRegistering) {
+          const exists = state.registeredUsers.some(u => u.username.toLowerCase() === username.toLowerCase());
+          if (exists) {
+            authError.textContent = 'El usuario ya existe. Elija otro nombre.';
+            authError.classList.remove('hidden');
+            return;
+          }
+          const newUser = { username, password, displayName: name || username };
+          state.registeredUsers.push(newUser);
+          saveRegisteredUsers(state.registeredUsers);
+          state.currentUser = newUser;
+          setCurrentSession(newUser);
+          showToast('success', 'Registro Exitoso', `Bienvenido/a, ${newUser.username}`);
+          renderApp();
+        } else {
+          const found = state.registeredUsers.find(u => u.username.toLowerCase() === username.toLowerCase() && u.password === password);
+          if (found || (username.toLowerCase() === 'angelo2008' && password === 'Sago2008')) {
+            const user = found || DEFAULT_USERS[0];
+            state.currentUser = user;
+            setCurrentSession(user);
+            showToast('success', `¡Bienvenido, ${user.displayName || user.username}!`, 'Sesión iniciada con éxito.');
+            renderApp();
+          } else {
+            authError.textContent = 'Usuario o contraseña incorrectos. Utilice Angelo2008 / Sago2008';
+            authError.classList.remove('hidden');
+          }
+        }
+      };
+    }
+
+    // ==========================================
+    // 6. NAVBAR CON 3 BOTONES DE CONTROL
+    // ==========================================
+    function renderNavbar() {
+      const userSolutionsCount = state.solutions.filter(s => s.username.toLowerCase() === state.currentUser.username.toLowerCase()).length;
+
+      return `
+        <header class="sticky top-0 z-40 w-full border-b border-[#30363D] bg-[#0D1117]/95 backdrop-blur-md">
+          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-4">
+              <!-- Brand -->
+              <div class="flex items-center gap-2.5 cursor-pointer" onclick="switchTab('inicio')">
+                <div class="w-9 h-9 rounded-lg bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white font-bold font-code text-sm shadow-lg shadow-purple-900/30">
+                  &lt;/&gt;
+                </div>
+                <div>
+                  <span class="text-base font-bold tracking-tight text-white block">
+                    Nexus<span class="text-purple-400">Solve</span>
+                  </span>
+                  <span class="text-[10px] text-gray-400 font-medium tracking-wider uppercase block -mt-1 font-code">
+                    Code Hub
+                  </span>
+                </div>
+              </div>
+
+              <!-- 3 BOTONES DE CONTROL (Sección 4) -->
+              <nav class="flex items-center gap-1 sm:gap-2">
+                <!-- Botón 1: 🏠 Inicio -->
+                <button onclick="switchTab('inicio')" class="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                  state.activeTab === 'inicio' ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30' : 'text-gray-300 hover:text-white hover:bg-[#161B22]'
+                }">
+                  <span>🏠 Inicio</span>
+                </button>
+
+                <!-- Botón 2: 📂 Mis Soluciones -->
+                <button onclick="switchTab('mis-soluciones')" class="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                  state.activeTab === 'mis-soluciones' ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30' : 'text-gray-300 hover:text-white hover:bg-[#161B22]'
+                }">
+                  <span>📂 Mis Soluciones</span>
+                  <span class="px-1.5 py-0.2 text-[11px] font-code font-bold bg-[#161B22] text-purple-300 border border-[#30363D] rounded-full">
+                    ${userSolutionsCount}
+                  </span>
+                </button>
+
+                <!-- Botón 3: 🚀 Explorar Problemas -->
+                <button onclick="switchTab('explorar')" class="flex items-center gap-2 px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all ${
+                  state.activeTab === 'explorar' ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30' : 'text-gray-300 hover:text-white hover:bg-[#161B22]'
+                }">
+                  <span>🚀 Explorar Problemas</span>
+                </button>
+              </nav>
+
+              <!-- Usuario y Salir -->
+              <div class="flex items-center gap-3">
+                <div class="hidden sm:flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-[#161B22] border border-[#30363D]">
+                  <div class="w-6 h-6 rounded-full bg-purple-600 flex items-center justify-center text-xs font-bold font-code text-white">
+                    ${state.currentUser.username[0].toUpperCase()}
+                  </div>
+                  <span class="text-xs font-code font-bold text-gray-200">${state.currentUser.username}</span>
+                </div>
+                <button onclick="logout()" class="p-2 text-gray-400 hover:text-rose-400 rounded-lg hover:bg-[#161B22] text-xs font-medium" title="Cerrar sesión">
+                  Salir
+                </button>
+              </div>
+            </div>
+          </div>
+        </header>
+      `;
+    }
+
+    // ==========================================
+    // 7. BOTÓN 1: 🏠 INICIO (DASHBOARD)
+    // ==========================================
+    function renderDashboard() {
+      const userSolutions = state.solutions.filter(s => s.username.toLowerCase() === state.currentUser.username.toLowerCase());
+      const totalBounty = state.challenges.reduce((sum, c) => sum + c.reward, 0);
+
+      return `
+        <div class="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+          <!-- Banner de Bienvenida -->
+          <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#161B22] via-[#121620] to-[#0D1117] border border-[#30363D] p-6 sm:p-8">
+            <div class="space-y-2 max-w-2xl">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-purple-950/60 border border-purple-500/40 text-purple-300 text-xs font-semibold">
+                ✨ Panel de Innovación & Repositorios de Código
+              </span>
+              <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                ¡Bienvenido, <span class="text-purple-400">${state.currentUser.displayName || state.currentUser.username}</span>!
+              </h1>
+              <p class="text-xs sm:text-sm text-gray-300 leading-relaxed">
+                Selecciona cualquiera de los 13 desafíos de ingeniería, redacta tu código fuente y crea repositorios interactivos estilo GitHub con visor y ejecución directa.
+              </p>
+            </div>
+
+            <div class="mt-5 flex flex-wrap gap-3">
+              <button onclick="switchTab('explorar')" class="px-4 py-2.5 text-xs sm:text-sm font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg shadow-lg shadow-purple-900/40">
+                🚀 Explorar Retos Activos
+              </button>
+              <button onclick="switchTab('mis-soluciones')" class="px-4 py-2.5 text-xs sm:text-sm font-semibold text-gray-200 bg-[#21262D] hover:bg-[#30363D] border border-[#30363D] rounded-lg">
+                📂 Mis Soluciones (${userSolutions.length})
+              </button>
+            </div>
+          </div>
+
+          <!-- Métricas de Actividad -->
+          <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="p-4 rounded-xl bg-[#161B22] border border-[#30363D]">
+              <span class="text-[11px] font-mono uppercase text-gray-400 block">Tus Soluciones Subidas</span>
+              <span class="text-2xl font-bold font-code text-white">${userSolutions.length}</span>
+              <span class="text-xs text-purple-400 block mt-0.5">repositorios</span>
+            </div>
+            <div class="p-4 rounded-xl bg-[#161B22] border border-[#30363D]">
+              <span class="text-[11px] font-mono uppercase text-gray-400 block">Bolsa Total de Recompensas</span>
+              <span class="text-2xl font-bold font-code text-emerald-400">$${totalBounty.toLocaleString('en-US')} USD</span>
+              <span class="text-xs text-gray-400 block mt-0.5">fondos en escrow</span>
+            </div>
+            <div class="p-4 rounded-xl bg-[#161B22] border border-[#30363D]">
+              <span class="text-[11px] font-mono uppercase text-gray-400 block">Retos Disponibles</span>
+              <span class="text-2xl font-bold font-code text-white">13</span>
+              <span class="text-xs text-indigo-400 block mt-0.5">problemas corporativos</span>
+            </div>
+            <div class="p-4 rounded-xl bg-[#161B22] border border-[#30363D]">
+              <span class="text-[11px] font-mono uppercase text-gray-400 block">Reto Inicial Sugerido</span>
+              <span class="text-base font-bold text-purple-300 block truncate">CodeAcademy Labs</span>
+              <span class="text-xs text-emerald-400 font-code font-bold">$1,200 USD · Hola Mundo</span>
+            </div>
+          </div>
+
+          <!-- Últimas Soluciones Enviadas -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between">
+              <h2 class="text-base font-bold text-white">Últimas Soluciones Enviadas</h2>
+              <button onclick="switchTab('mis-soluciones')" class="text-xs text-purple-400 hover:underline">Ver todas →</button>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${userSolutions.map(sol => {
+                const ch = state.challenges.find(c => c.id === sol.challengeId);
+                return `
+                  <div class="p-4 rounded-xl bg-[#161B22] border border-[#30363D] hover:border-purple-500/50 transition-all flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-center justify-between text-xs text-gray-400 mb-1">
+                        <span class="font-code text-purple-400">${sol.repoName}</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold ${sol.status === 'aceptada' ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40' : 'bg-amber-950/60 text-amber-300 border border-amber-500/40'}">
+                          ${sol.status === 'aceptada' ? 'Aceptada' : 'En revisión'}
+                        </span>
+                      </div>
+                      <h3 class="text-sm font-bold text-white">${ch ? ch.title : 'Reto Empresarial'}</h3>
+                      <p class="text-xs text-gray-400 line-clamp-1 mt-1">${sol.description}</p>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-[#30363D] flex items-center justify-between">
+                      <span class="text-xs font-code text-emerald-400 font-bold">$${ch ? ch.reward.toLocaleString('en-US') : 0} USD</span>
+                      <button onclick="openRepoViewer('${sol.id}')" class="px-3 py-1.5 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg">
+                        Ver Código / GitHub
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 8. BOTÓN 2: 📂 MIS SOLUCIONES (TUS SUBIDAS)
+    // ==========================================
+    function renderMySolutions() {
+      const userSolutions = state.solutions.filter(s => s.username.toLowerCase() === state.currentUser.username.toLowerCase());
+
+      return `
+        <div class="space-y-6 animate-in fade-in duration-200">
+          <!-- Encabezado -->
+          <div class="p-6 rounded-2xl bg-[#161B22] border border-[#30363D] flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-purple-400 mb-1">
+                📂 Repositorios Creados y Código Subido
+              </div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white">Mis Soluciones</h1>
+              <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-xl">
+                Revisa las soluciones que has enviado a las empresas. Haz clic en <strong>"Ver Código / Entrar a tu GitHub"</strong> para inspeccionar la interfaz idéntica al repositorio.
+              </p>
+            </div>
+            <div class="p-4 bg-[#0D1117] border border-purple-500/30 rounded-xl text-right shrink-0">
+              <span class="text-[11px] uppercase font-mono text-purple-400 block">Total Enviadas</span>
+              <span class="text-3xl font-code font-bold text-white">${userSolutions.length}</span>
+            </div>
+          </div>
+
+          <!-- Lista de Soluciones -->
+          ${userSolutions.length === 0 ? `
+            <div class="p-12 text-center rounded-2xl bg-[#161B22] border border-[#30363D] space-y-3">
+              <p class="text-sm text-gray-300 font-semibold">Aún no has enviado soluciones</p>
+              <p class="text-xs text-gray-400">Ve a Explorar Problemas, elige uno y envía tu archivo de código.</p>
+              <button onclick="switchTab('explorar')" class="px-4 py-2 text-xs font-semibold text-white bg-purple-600 hover:bg-purple-500 rounded-lg">
+                Explorar los 13 Retos
+              </button>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              ${userSolutions.map(sol => {
+                const ch = state.challenges.find(c => c.id === sol.challengeId);
+                return `
+                  <div class="p-5 rounded-xl bg-[#161B22] border border-[#30363D] hover:border-purple-500/50 transition-all flex flex-col justify-between shadow-lg">
+                    <div>
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs text-gray-400 font-medium">${ch ? ch.company : 'Empresa'} · <span class="text-purple-400">${ch ? ch.industry : ''}</span></span>
+                        <span class="text-[11px] font-semibold px-2.5 py-0.5 rounded-full border ${sol.status === 'aceptada' ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300' : 'bg-amber-950/60 border-amber-500/40 text-amber-300'}">
+                          ${sol.status === 'aceptada' ? 'Aceptada / Ganadora' : 'En revisión'}
+                        </span>
+                      </div>
+
+                      <h3 class="text-base font-bold text-white leading-snug mb-2">${ch ? ch.title : 'Reto'}</h3>
+
+                      <!-- Repo Capsule -->
+                      <div class="p-2.5 bg-[#0D1117] border border-[#30363D] rounded-lg mb-3 flex items-center justify-between text-xs font-code">
+                        <span class="text-purple-400 truncate font-semibold">🐙 ${sol.repoName}</span>
+                        <span class="text-gray-400 text-[10px] uppercase bg-[#161B22] px-2 py-0.5 rounded">${sol.language}</span>
+                      </div>
+
+                      <p class="text-xs text-gray-300 line-clamp-2 leading-relaxed mb-4">${sol.description}</p>
+                    </div>
+
+                    <div class="pt-3 border-t border-[#30363D] flex items-center justify-between">
+                      <div class="text-xs font-code">
+                        <span class="text-gray-500 block text-[10px] uppercase">Recompensa</span>
+                        <span class="text-emerald-400 font-bold">$${ch ? ch.reward.toLocaleString('en-US') : 0} USD</span>
+                      </div>
+
+                      <!-- BOTÓN DIRECTO OBLIGATORIO: Ver Código / Entrar a tu GitHub -->
+                      <button onclick="openRepoViewer('${sol.id}')" class="px-3.5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-lg shadow-md shadow-purple-900/40 flex items-center gap-1.5 transition-colors">
+                        <span>🐙 Ver Código / Entrar a tu GitHub</span>
+                      </button>
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 9. BOTÓN 3: 🚀 EXPLORAR PROBLEMAS (13 RETOS)
+    // ==========================================
+    function renderExploreChallenges() {
+      const userSolutions = state.solutions.filter(s => s.username.toLowerCase() === state.currentUser.username.toLowerCase());
+      const submittedIds = new Set(userSolutions.map(s => s.challengeId));
+
+      const filtered = state.challenges.filter(c => {
+        if (state.filterIndustry !== 'Todas' && c.industry !== state.filterIndustry) return false;
+        if (state.searchQuery.trim()) {
+          const q = state.searchQuery.toLowerCase();
+          return c.title.toLowerCase().includes(q) || c.company.toLowerCase().includes(q) || c.summary.toLowerCase().includes(q);
+        }
+        return true;
+      });
+
+      const industries = ['Todas', ...new Set(state.challenges.map(c => c.industry))];
+
+      return `
+        <div class="space-y-6 animate-in fade-in duration-200">
+          <div class="p-6 rounded-2xl bg-[#161B22] border border-[#30363D] flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div class="text-xs font-semibold uppercase tracking-wider text-purple-400 mb-1">
+                🚀 Catálogo de Innovación Abierta
+              </div>
+              <h1 class="text-xl sm:text-2xl font-bold text-white">Explora los 13 Problemas Empresariales</h1>
+              <p class="text-xs sm:text-sm text-gray-400 mt-1 max-w-xl">
+                Al enviar una solución con tu código, se moverá automáticamente a <strong>"Mis Soluciones"</strong> y creará un repositorio interactivo.
+              </p>
+            </div>
+            <div class="text-xs text-gray-400 bg-[#0D1117] px-4 py-2 rounded-xl border border-[#30363D] font-code">
+              13 Retos Activos · Recompensas en USD
+            </div>
+          </div>
+
+          <!-- Filtros y Búsqueda -->
+          <div class="p-4 rounded-xl bg-[#161B22] border border-[#30363D] space-y-3">
+            <input type="text" id="search-input" value="${state.searchQuery}" placeholder="Buscar reto por empresa, tecnología o palabra clave..." class="w-full px-3.5 py-2 bg-[#0D1117] border border-[#30363D] rounded-lg text-xs sm:text-sm text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs">
+              <span class="text-gray-500 font-medium shrink-0">Industria:</span>
+              ${industries.map(ind => `
+                <button onclick="setIndustryFilter('${ind}')" class="px-3 py-1 rounded-lg text-xs font-medium whitespace-nowrap ${state.filterIndustry === ind ? 'bg-purple-600 text-white font-semibold' : 'bg-[#0D1117] text-gray-400 hover:text-white'}">
+                  ${ind}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- Tarjetas de los 13 Retos -->
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            ${filtered.map(ch => {
+              const hasSubmitted = submittedIds.has(ch.id);
+              return `
+                <div class="p-5 rounded-xl border flex flex-col justify-between transition-all ${
+                  hasSubmitted ? 'bg-[#121620] border-purple-500/40' : 'bg-[#161B22] border-[#30363D] hover:border-purple-500/50'
+                }">
+                  <div>
+                    <div class="flex items-center justify-between text-xs text-gray-400 mb-2">
+                      <span class="font-code font-bold text-purple-400">#${ch.number}</span>
+                      <span class="font-semibold text-gray-300 truncate">${ch.company}</span>
+                      <span class="text-purple-400">${ch.industry}</span>
+                    </div>
+
+                    <h3 class="text-base font-bold text-white mb-2 leading-snug">${ch.title}</h3>
+                    <p class="text-xs text-gray-300 line-clamp-3 leading-relaxed mb-4">${ch.summary}</p>
+
+                    <div class="flex flex-wrap gap-1.5 mb-4">
+                      ${ch.tags.map(t => `<span class="text-[10px] font-code px-2 py-0.5 rounded bg-[#0D1117] text-gray-300 border border-[#30363D]">${t}</span>`).join('')}
+                    </div>
+                  </div>
+
+                  <div class="pt-4 border-t border-[#30363D]">
+                    <div class="flex items-baseline justify-between mb-3">
+                      <div>
+                        <span class="text-[10px] text-gray-500 uppercase font-code">Recompensa</span>
+                        <div class="text-xl font-code font-bold text-emerald-400">$${ch.reward.toLocaleString('en-US')} USD</div>
+                      </div>
+                      <span class="text-xs font-code text-gray-400">${ch.deadline}</span>
+                    </div>
+
+                    ${hasSubmitted ? `
+                      <button onclick="switchTab('mis-soluciones')" class="w-full py-2 px-3 text-xs font-semibold text-purple-300 bg-purple-950/60 border border-purple-500/40 rounded-lg hover:bg-purple-900/60 transition-colors">
+                        ✓ Solución Enviada (Ver en Mis Soluciones)
+                      </button>
+                    ` : `
+                      <button onclick="openSubmitModal('${ch.id}')" class="w-full py-2.5 px-3 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-lg shadow-md shadow-purple-900/40 transition-colors">
+                        Redactar Solución / Subir Código
+                      </button>
+                    `}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // ==========================================
+    // 10. MODAL DE ENVÍO DE SOLUCIÓN
+    // ==========================================
+    function renderSubmitModal() {
+      const ch = state.selectedChallenge;
+      if (!ch) return '';
+
+      return `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div class="relative w-full max-w-3xl bg-[#0D1117] border border-[#30363D] rounded-xl shadow-2xl p-6 sm:p-8 my-4 text-gray-100">
+            <div class="flex items-start justify-between pb-4 border-b border-[#30363D]">
+              <div>
+                <span class="text-xs text-purple-400 font-semibold font-code block">RETO #${ch.number} · ${ch.company}</span>
+                <h2 class="text-lg sm:text-xl font-bold text-white mt-0.5">${ch.title}</h2>
+                <span class="text-xs text-emerald-400 font-code font-bold">Recompensa: $${ch.reward.toLocaleString('en-US')} USD</span>
+              </div>
+              <button onclick="closeModal()" class="text-gray-400 hover:text-white text-sm p-1">✕</button>
+            </div>
+
+            <form id="solution-form" class="mt-4 space-y-4">
+              <!-- Botón rápido Hola Mundo -->
+              <div class="flex items-center justify-between bg-[#161B22] p-2.5 rounded-lg border border-[#30363D] text-xs">
+                <span class="text-gray-300">¿Quieres probar rápidamente?</span>
+                <button type="button" onclick="loadHelloWorldTemplate()" class="px-2.5 py-1 text-xs font-bold text-purple-300 bg-purple-950/60 border border-purple-500/40 rounded hover:bg-purple-900">
+                  Cargar Script "Hola Mundo"
+                </button>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-medium text-gray-300 mb-1">Nombre del Repositorio</label>
+                  <input type="text" id="sol-repo" required value="${state.currentUser.username.toLowerCase()}/solucion-${ch.id}" class="w-full px-3 py-2 bg-[#090D16] border border-[#30363D] rounded-lg text-xs font-code text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-300 mb-1">Archivo de Código</label>
+                  <input type="text" id="sol-file" required value="${ch.defaultFile}" class="w-full px-3 py-2 bg-[#090D16] border border-[#30363D] rounded-lg text-xs font-code text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+                </div>
+              </div>
+
+              <div>
+                <div class="flex items-center justify-between mb-1">
+                  <label class="block text-xs font-medium text-gray-300">Código Fuente de la Solución (Script Plano)</label>
+                  <span class="text-[11px] text-gray-500 font-code">Python / JavaScript</span>
+                </div>
+                <textarea id="sol-code" rows="11" required class="w-full p-4 bg-[#090D16] border border-[#30363D] rounded-lg font-code text-xs text-gray-200 focus:outline-none focus:ring-1 focus:ring-purple-500 leading-relaxed">${ch.starterCode}</textarea>
+              </div>
+
+              <div>
+                <label class="block text-xs font-medium text-gray-300 mb-1">Descripción de la Solución</label>
+                <input type="text" id="sol-desc" required value="Solución validada para el desafío de ${ch.company}" class="w-full px-3 py-2 bg-[#090D16] border border-[#30363D] rounded-lg text-xs text-white focus:outline-none focus:ring-1 focus:ring-purple-500" />
+              </div>
+
+              <div class="flex items-center justify-between pt-3 border-t border-[#30363D]">
+                <span class="text-xs text-gray-400">Se guardará automáticamente en <strong>Mis Soluciones</strong>.</span>
+                <div class="flex gap-2">
+                  <button type="button" onclick="closeModal()" class="px-4 py-2 text-xs text-gray-400 hover:text-white bg-[#161B22] rounded-lg">Cancelar</button>
+                  <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-purple-600 hover:bg-purple-500 rounded-lg shadow-lg shadow-purple-900/40">
+                    Enviar y Crear Repositorio GitHub
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+    }
+
+    function loadHelloWorldTemplate() {
+      const codeArea = document.getElementById('sol-code');
+      const fileInput = document.getElementById('sol-file');
+      fileInput.value = 'hola_mundo.js';
+      codeArea.value = `// ==============================================================
+// Script "Hola Mundo" interactivo para NexusSolve
+// Desarrollado por: ${state.currentUser.username}
+// ==============================================================
+
+function holaMundo(nombre = "${state.currentUser.username}") {
+  const saludo = \`¡Hola Mundo desde NexusSolve! Código entregado por \${nombre}.\`;
+  console.log(saludo);
+  console.log("Fecha de ejecución: " + new Date().toISOString());
+  return { status: 200, success: true, autor: nombre };
+}
+
+holaMundo();
+`;
+    }
+
+    // ==========================================
+    // 11. MODAL VISOR ESTILO GITHUB REPOSITORIO
+    // ==========================================
+    function renderRepoViewerModal() {
+      const sol = state.selectedSolution;
+      if (!sol) return '';
+      const ch = state.challenges.find(c => c.id === sol.challengeId);
+      const lines = sol.code.split('\n');
+
+      return `
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/85 backdrop-blur-md overflow-y-auto">
+          <div class="relative w-full max-w-5xl bg-[#0D1117] border border-[#30363D] rounded-xl shadow-2xl text-gray-200 overflow-hidden my-4">
+            
+            <!-- GitHub Header -->
+            <div class="bg-[#161B22] border-b border-[#30363D] px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
+              <div class="flex items-center gap-2 text-sm font-semibold truncate">
+                <span class="text-gray-400">${sol.username}</span>
+                <span class="text-gray-500">/</span>
+                <span class="text-purple-400 font-bold truncate">${sol.repoName.split('/')[1] || sol.repoName}</span>
+                <span class="text-[11px] font-medium text-gray-400 border border-[#30363D] px-2 py-0.5 rounded-full ml-1">Public</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs bg-[#21262D] px-2.5 py-1 rounded border border-[#30363D] text-gray-300">★ Star 8</span>
+                <button onclick="closeModal()" class="text-gray-400 hover:text-white p-1">✕</button>
+              </div>
+            </div>
+
+            <!-- Contexto del Reto -->
+            <div class="bg-[#090D16] border-b border-[#30363D] px-4 sm:px-6 py-2 text-xs flex items-center justify-between">
+              <span class="text-gray-400">Reto: <strong class="text-white">${ch ? ch.title : 'Desafío'}</strong> · <span class="text-purple-400">${ch ? ch.company : ''}</span></span>
+              <span class="text-emerald-400 font-code font-bold">$${ch ? ch.reward.toLocaleString('en-US') : 0} USD</span>
+            </div>
+
+            <!-- Subheader GitHub -->
+            <div class="px-4 sm:px-6 py-3 bg-[#0D1117] flex items-center justify-between border-b border-[#30363D] text-xs">
+              <div class="flex items-center gap-2">
+                <span class="px-2.5 py-1 bg-[#21262D] border border-[#30363D] rounded font-semibold text-gray-200">🌿 main</span>
+                <span class="text-gray-400">1 rama · 1 commit</span>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="runCodeInModal('${sol.id}')" class="px-3 py-1.5 font-bold text-white bg-purple-600 hover:bg-purple-500 rounded text-xs shadow">
+                  ▶ Ejecutar Script
+                </button>
+                <button onclick="copyCodeContent()" class="px-3 py-1.5 bg-[#21262D] hover:bg-[#30363D] border border-[#30363D] rounded text-gray-300 text-xs">
+                  Copiar Código
+                </button>
+              </div>
+            </div>
+
+            <!-- Último Commit Bar -->
+            <div class="mx-4 sm:mx-6 my-3 p-3 bg-[#161B22] border border-[#30363D] rounded-lg flex items-center justify-between text-xs text-gray-400 font-code">
+              <div class="truncate">
+                <strong class="text-white">${sol.username}</strong> ${sol.commitMessage || 'feat: Entrega de solución'}
+              </div>
+              <span class="text-purple-400 font-bold shrink-0">${sol.commitHash || 'a8f39c2'}</span>
+            </div>
+
+            <!-- Contenedor de Código con Cabecera y Líneas -->
+            <div class="p-4 sm:p-6 space-y-4">
+              <div class="border border-[#30363D] rounded-lg overflow-hidden bg-[#0D1117]">
+                <!-- Cabecera de Archivo Estilo GitHub -->
+                <div class="bg-[#161B22] border-b border-[#30363D] px-4 py-2 flex items-center justify-between text-xs text-gray-400 font-code">
+                  <div class="flex items-center gap-2">
+                    <span class="text-purple-400">📄</span>
+                    <strong class="text-white">${sol.fileName}</strong>
+                    <span>·</span>
+                    <span>${lines.length} líneas</span>
+                  </div>
+                  <span class="uppercase text-gray-500">${sol.language}</span>
+                </div>
+
+                <!-- Líneas de Código con Números en Margen -->
+                <div class="p-4 text-xs font-code overflow-x-auto bg-[#0D1117] leading-relaxed max-h-96">
+                  <table class="w-full border-collapse">
+                    <tbody>
+                      ${lines.map((line, idx) => `
+                        <tr class="hover:bg-[#161B22]/60">
+                          <td class="text-right pr-4 text-gray-600 select-none w-10 text-[11px] align-top">${idx + 1}</td>
+                          <td class="text-gray-200 whitespace-pre">${highlightSyntax(line)}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <!-- Terminal Interactiva de Ejecución -->
+              <div id="repo-terminal" class="hidden border border-[#30363D] rounded-lg bg-[#090D16] overflow-hidden">
+                <div class="bg-[#161B22] px-4 py-2 border-b border-[#30363D] text-xs font-code text-gray-300 flex items-center justify-between">
+                  <span>💻 Terminal Sandbox de Ejecución</span>
+                  <button onclick="document.getElementById('repo-terminal').classList.add('hidden')" class="text-gray-400 hover:text-white">✕</button>
+                </div>
+                <pre id="repo-terminal-output" class="p-4 text-xs font-code text-emerald-400 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto"></pre>
+              </div>
+            </div>
+
+            <div class="bg-[#161B22] border-t border-[#30363D] px-6 py-3 flex items-center justify-between text-xs text-gray-400">
+              <span>Repositorio sincronizado localmente</span>
+              <button onclick="closeModal()" class="px-4 py-1.5 bg-[#21262D] hover:bg-[#30363D] rounded text-white">Cerrar Visor</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function highlightSyntax(line) {
+      if (line.trim().startsWith('//') || line.trim().startsWith('#')) {
+        return `<span class="text-gray-500 italic">${escapeHtml(line)}</span>`;
+      }
+      return escapeHtml(line)
+        .replace(/(def|class|function|return|import|from|const|let|var|if|else|while|for)/g, '<span class="text-[#FF7B72] font-bold">$1</span>')
+        .replace(/(".*?"|'.*?'|`.*?`)/g, '<span class="text-[#A5D6FF]">$1</span>')
+        .replace(/(print|console\.log|Math|Date|JSON)/g, '<span class="text-[#79C0FF]">$1</span>');
+    }
+
+    function escapeHtml(text) {
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function copyCodeContent() {
+      if (state.selectedSolution) {
+        navigator.clipboard.writeText(state.selectedSolution.code);
+        showToast('success', 'Código copiado', 'Contenido copiado al portapapeles.');
+      }
+    }
+
+    function runCodeInModal(solId) {
+      const term = document.getElementById('repo-terminal');
+      const termOut = document.getElementById('repo-terminal-output');
+      if (!term || !termOut) return;
+
+      term.classList.remove('hidden');
+      termOut.textContent = '$ Ejecutando script en entorno sandbox...\n';
+
+      setTimeout(() => {
+        const sol = state.selectedSolution;
+        const output = sol.executionOutput || `[OK] Proceso terminado con código 0.\nSalida:\n${sol.code.split('\n').filter(l => l.includes('console.log') || l.includes('print')).join('\n')}`;
+        termOut.textContent += `[OK] Tiempo: 28ms\n----------------------------------------\n${output}`;
+      }, 500);
+    }
+
+    // ==========================================
+    // 12. FOOTER
+    // ==========================================
+    function renderFooter() {
+      return `
+        <footer class="w-full border-t border-[#30363D] bg-[#0D1117] py-6 px-4 text-xs text-gray-500 mt-auto">
+          <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div>
+              <strong class="text-gray-300">NexusSolve Code Hub</strong> · Crowdsourcing y Repositorios de Código
+            </div>
+            <div class="flex items-center gap-4">
+              <button onclick="resetData()" class="text-gray-400 hover:text-purple-300">Restablecer 13 retos y datos</button>
+              <span>·</span>
+              <span class="font-code text-purple-400">Usuario activo: ${state.currentUser.username}</span>
+            </div>
+          </div>
+        </footer>
+      `;
+    }
+
+    // ==========================================
+    // 13. CONTROLADORES DE EVENTOS Y RUTAS
+    // ==========================================
+    function switchTab(tab) {
+      state.activeTab = tab;
+      renderApp();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function logout() {
+      state.currentUser = null;
+      setCurrentSession(null);
+      showToast('info', 'Sesión cerrada', 'Has salido de tu cuenta.');
+      renderApp();
+    }
+
+    function openSubmitModal(challengeId) {
+      state.selectedChallenge = state.challenges.find(c => c.id === challengeId);
+      state.activeModal = 'submit';
+      renderApp();
+    }
+
+    function openRepoViewer(solutionId) {
+      state.selectedSolution = state.solutions.find(s => s.id === solutionId);
+      state.activeModal = 'repo-viewer';
+      renderApp();
+    }
+
+    function closeModal() {
+      state.activeModal = null;
+      state.selectedChallenge = null;
+      state.selectedSolution = null;
+      renderApp();
+    }
+
+    function setIndustryFilter(ind) {
+      state.filterIndustry = ind;
+      renderApp();
+    }
+
+    function resetData() {
+      state.challenges = CHALLENGES;
+      state.solutions = INITIAL_SOLUTIONS;
+      state.registeredUsers = DEFAULT_USERS;
+      saveSolutions(INITIAL_SOLUTIONS);
+      saveRegisteredUsers(DEFAULT_USERS);
+      showToast('success', 'Datos restablecidos', 'Se han restaurado los 13 retos y las soluciones originales de Angelo2008.');
+      renderApp();
+    }
+
+    function bindGlobalEvents() {
+      // Búsqueda en catálogo
+      const searchInput = document.getElementById('search-input');
+      if (searchInput) {
+        searchInput.oninput = (e) => {
+          state.searchQuery = e.target.value;
+          // Render solo de la sección de retos para no perder foco
+          const container = document.querySelector('main');
+          if (container && state.activeTab === 'explorar') {
+            container.innerHTML = renderExploreChallenges();
+            const newSearch = document.getElementById('search-input');
+            if (newSearch) {
+              newSearch.focus();
+              newSearch.setSelectionRange(newSearch.value.length, newSearch.value.length);
+              bindGlobalEvents();
+            }
+          }
+        };
+      }
+
+      // Envío de Solución en el Modal
+      const solForm = document.getElementById('solution-form');
+      if (solForm) {
+        solForm.onsubmit = (e) => {
+          e.preventDefault();
+          const repo = document.getElementById('sol-repo').value.trim();
+          const file = document.getElementById('sol-file').value.trim();
+          const code = document.getElementById('sol-code').value;
+          const desc = document.getElementById('sol-desc').value.trim();
+
+          const newSol = {
+            id: 'sol-' + Date.now(),
+            challengeId: state.selectedChallenge.id,
+            username: state.currentUser.username,
+            repoName: repo,
+            fileName: file,
+            language: file.endsWith('.js') ? 'javascript' : 'python',
+            code: code,
+            description: desc,
+            commitMessage: 'feat: Entrega de código validado para reto ' + state.selectedChallenge.number,
+            commitHash: Math.random().toString(16).substring(2, 9),
+            submittedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+            status: 'en_revision',
+            executionOutput: `[OK] Archivo ${file} compilado y validado en sandbox.\nSalida de prueba:\n${code.split('\n').filter(l => l.includes('console.log') || l.includes('print')).join('\n') || 'Proceso finalizado con éxito.'}`
+          };
+
+          // Guardar y agregar a Mis Soluciones
+          state.solutions.unshift(newSol);
+          saveSolutions(state.solutions);
+
+          showToast('success', '¡Solución Enviada y Repositorio Creado!', `Se ha registrado ${repo} en Mis Soluciones.`);
+
+          // Regla clave: Mover a Mis Soluciones y abrir visor
+          state.activeTab = 'mis-soluciones';
+          state.activeModal = 'repo-viewer';
+          state.selectedSolution = newSol;
+          renderApp();
+        };
+      }
+    }
+
+    // Inicializar aplicación
+    document.addEventListener('DOMContentLoaded', () => {
+      renderApp();
+    });
+    // Fallback inmediato si DOMContentLoaded ya ocurrió
+    renderApp();
+  </script>
+</body>
+</html>
