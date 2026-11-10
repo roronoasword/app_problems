@@ -1,0 +1,6 @@
+{
+  "name": "NexusSolve - Crowdsourcing de Innovación",
+  "description": "Plataforma para conectar desafíos técnicos empresariales con desarrolladores que presentan soluciones mediante repositorios de GitHub.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
